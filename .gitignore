@@ -1,0 +1,7 @@
+/.gradle/
+/.idea/
+**/.cxx/
+weaverdb
+/weaverdb/
+/gradle/
+local.properties
