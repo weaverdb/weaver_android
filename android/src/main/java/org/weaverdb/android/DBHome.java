@@ -25,19 +25,26 @@ public class DBHome {
         if (!Files.exists(dbhome)) FileUtils.deleteDirectory(dbhome.toFile());
     }
 
-    public static void startDB(Path home) throws Exception {
+    public static boolean startDB(Path home) throws IOException {
+        boolean created = false;
         if (!Files.exists(home.resolve("dbhome"))) {
             unpackDBHome(home);
+            created = true;
         }
         Properties prop = new Properties();
         prop.setProperty("datadir", String.valueOf(home.resolve("dbhome")));
         prop.setProperty("allow_anonymous", "true");
-        prop.setProperty("start_delay", "10");
         prop.setProperty("debuglevel", "DEBUG");
         prop.setProperty("stdlog", "TRUE");
         prop.setProperty("disable_crc", "TRUE");
+        prop.setProperty("buffercount", "128");
 
         WeaverInitializer.initialize(prop);
+        return created;
+    }
+
+    public static void close() {
+        WeaverInitializer.close(false);
     }
 
     public static void initdb(Path home) throws Exception {
@@ -73,7 +80,7 @@ public class DBHome {
         }
     }
 
-    public static void unpackDBHome(Path home) throws Exception {
+    public static void unpackDBHome(Path home) throws IOException {
         try (InputStream is = DBHome.class.getResourceAsStream("/dbhome.tar")) {
             TarArchiveInputStream tar = new TarArchiveInputStream(is);
             ArchiveEntry entry;

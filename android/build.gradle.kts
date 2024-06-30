@@ -59,7 +59,7 @@ android {
 dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
-    implementation(fileTree(mapOf(
+    api(fileTree(mapOf(
         "dir" to "${project.rootDir}/weaverdb/pgjava_c/build/libs/",
         "include" to listOf("*.aar", "*.jar"),
     )))
