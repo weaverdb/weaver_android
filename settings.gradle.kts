@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "dblib"
 include(":android")
 include(":example")
+include(":weaverdb")
