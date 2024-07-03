@@ -1,18 +1,22 @@
+/*
+ * Copyright (c) 2024 Myron Scott <myron@weaverdb.org> All rights reserved.
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file.
+ */
+
 package org.weaverdb.example;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.TextView;
 import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import org.weaverdb.Connection;
 import org.weaverdb.ExecutionException;
@@ -20,6 +24,7 @@ import org.weaverdb.ResultSet;
 import org.weaverdb.android.DBHome;
 
 import java.util.Date;
+import java.util.stream.Stream;
 
 public class MainActivity extends AppCompatActivity {
     long clicks = 0;
@@ -34,6 +39,16 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });*/
+        ConstraintLayout layout = (ConstraintLayout) findViewById(R.id.main);
+        layout.setClickable(true);
+        layout.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN){
+                int x = (int) motionEvent.getX();
+                int y = (int) motionEvent.getY();
+                insertClick(x, y);
+            }
+            return true;
+        });
 
         Button push = (Button)findViewById(R.id.button);
         push.setOnClickListener(messageClickedHandler);
@@ -48,32 +63,39 @@ public class MainActivity extends AppCompatActivity {
                 c.execute("create table clickcounter (x int4, y int4, moment timestamp)");
             } else {
                 c = Connection.connectAnonymously("uitest");
-                clicks = ResultSet.builder(c).parse("select x,y,moment from clickcounter")
+                try (Stream<ResultSet.Row> r = ResultSet.builder(c).parse("select x,y,moment from clickcounter order by moment")
                         .output(1, Integer.class)
                         .output(2, Integer.class)
                         .output(3, Date.class)
-                        .execute().peek(r->Log.d("INIT", r.toString())).count();
+                        .execute()) {
+                    clicks = r.peek(row->Log.d("INIT", row.toString())).count();
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    private void replay() {
+        ConstraintLayout layout = (ConstraintLayout) findViewById(R.id.main);
+
+    }
+
     private final View.OnClickListener messageClickedHandler = new View.OnClickListener() {
         @SuppressLint("SetTextI18n")
         public void onClick(View v) {
-            Log.d("BUTTONS", "User tapped the Supabutton");
-
             System.out.println("clicked");
             TextView text = (TextView)findViewById(R.id.textView);
-            text.setText("click count:" + insertClick(new Date()));
+            text.setText("click count:" + insertClick(0,0));
         }
     };
 
-    private String insertClick(Date date) {
+    private String insertClick(int x, int y) {
         try {
-            ResultSet.builder(c).parse("insert into clickcounter (x,y,moment) values (0,0,$time)")
-                    .input("time", date).execute();
+            ResultSet.builder(c).parse("insert into clickcounter (x,y,moment) values ($x,$y,$time)")
+                    .input("x", x)
+                    .input("y", y)
+                    .input("time", new Date()).execute().close();
             clicks += 1;
         } catch (ExecutionException ee) {
 
@@ -86,9 +108,10 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         try {
             c.close();
-            DBHome.close();
         } catch (Exception ee) {
 
         }
     }
+
+
 }
