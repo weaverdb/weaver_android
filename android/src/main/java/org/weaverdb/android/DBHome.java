@@ -15,7 +15,6 @@ package org.weaverdb.android;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.FileUtils;
-import org.weaverdb.WeaverCmdLine;
 import org.weaverdb.WeaverInitializer;
 
 import java.io.IOException;
@@ -60,39 +59,6 @@ public class DBHome {
         Path home = singleInstance.get();
         if (home != null && singleInstance.compareAndSet(home, null)) {
             WeaverInitializer.close(false);
-        }
-    }
-
-    public static void initdb(Path home) throws Exception {
-        int val = WeaverCmdLine.cmd( new String[]{"-boot","-x","-C","-F","-D" + home.toString(), "-Q"});
-        try (InputStream is = DBHome.class.getResourceAsStream("/template1.bki.source")) {
-                pipe(is, System.out);
-        }
-        if (val != 0) throw new RuntimeException();
-
-        val = WeaverCmdLine.cmd( new String[]{"-boot","-C","-F","-D" + home.toString(), "-Q"});
-
-        try (InputStream is = DBHome.class.getResourceAsStream("/global1.bki.source")) {
-                pipe(is, System.out);
-        }
-        if (val != 0) throw new RuntimeException();
-
-        val = WeaverCmdLine.cmd( new String[]{"-boot","-C","-F","-D" + home.toString(), "-Q"});
-
-            OutputStream os = System.out;
-                os.write("open pg_database\n".getBytes());
-                os.write("insert (template1 anonymous 0 template1)\n".getBytes());
-                os.write("close pg_database\n".getBytes());
-
-        if (val != 0) throw new RuntimeException();
-
-    }
-
-    private static void pipe(InputStream is, OutputStream os) throws IOException {
-        int read = is.read();
-        while (read >= 0) {
-            os.write(read);
-            read = is.read();
         }
     }
 
