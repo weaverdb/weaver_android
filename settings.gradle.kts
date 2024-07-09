@@ -16,10 +16,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
 }
 
 rootProject.name = "dblib"
 include(":android")
 include(":example")
-include(":weaverdb")
+includeBuild("weaverdb")

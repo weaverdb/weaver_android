@@ -62,13 +62,13 @@ public class MainActivity extends AppCompatActivity {
         try {
             boolean created = DBHome.startDB(getApplicationContext().getFilesDir().toPath());
             if (created) {
-                try (Connection c = org.weaverdb.Connection.connectAnonymously("template1")) {
+                try (Connection c = org.weaverdb.Connection.connect("template1")) {
                     c.execute("create database uitest");
                 }
-                c = Connection.connectAnonymously("uitest");
+                c = Connection.connect("uitest");
                 c.execute("create table clickcounter (x int4, y int4, moment timestamp)");
             } else {
-                c = Connection.connectAnonymously("uitest");
+                c = Connection.connect("uitest");
                 try (Stream<ResultSet.Row> r = ResultSet.builder(c).parse("select x,y,moment from clickcounter order by moment")
                         .output(1, Integer.class)
                         .output(2, Integer.class)
