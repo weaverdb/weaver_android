@@ -21,6 +21,10 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "dblib"
+includeBuild("weaverdb") {
+    dependencySubstitution {
+        substitute(module("org.weaverdb:connect")).using(project(":pgjava_c"))
+    }
+}
 include(":android")
 include(":example")
-includeBuild("weaverdb")
