@@ -9,7 +9,10 @@ This is Android packaging for Android devices.  Native parts of [WeaverDB](https
 ## Getting Started
 
 ### Building
-    
+
+After cloning repository, do the following:
+
+    % cd weaver_android
     % git submodule init
     % git submodule update
     % ./gradlew build
