@@ -13,6 +13,7 @@ This is Android packaging for Android devices.  Native parts of [WeaverDB](https
 After cloning repository, do the following:
 
     % cd weaver_android
+    % echo "sdk.dir=<path_to_android_sdk>" > local.properties
     % git submodule init
     % git submodule update
     % ./gradlew build
