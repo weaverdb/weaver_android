@@ -24,9 +24,9 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import org.weaverdb.Connection;
+import org.weaverdb.DBReference;
 import org.weaverdb.ExecutionException;
-import org.weaverdb.ResultSet;
+import org.weaverdb.FetchSet;
 import org.weaverdb.android.DBHome;
 
 import java.util.Date;
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 public class MainActivity extends AppCompatActivity {
     long clicks = 0;
-    Connection c;
+    DBReference c;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,14 +62,14 @@ public class MainActivity extends AppCompatActivity {
         try {
             boolean created = DBHome.startDB(getApplicationContext().getFilesDir().toPath());
             if (created) {
-                try (Connection c = org.weaverdb.Connection.connect("template1")) {
+                try (DBReference c = org.weaverdb.DBReference.connect("template1")) {
                     c.execute("create database uitest");
                 }
-                c = Connection.connect("uitest");
+                c = DBReference.connect("uitest");
                 c.execute("create table clickcounter (x int4, y int4, moment timestamp)");
             } else {
-                c = Connection.connect("uitest");
-                try (Stream<ResultSet.Row> r = ResultSet.builder(c).parse("select x,y,moment from clickcounter order by moment")
+                c = DBReference.connect("uitest");
+                try (Stream<FetchSet.Row> r = FetchSet.builder(c).parse("select x,y,moment from clickcounter order by moment")
                         .output(1, Integer.class)
                         .output(2, Integer.class)
                         .output(3, Date.class)
@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String insertClick(int x, int y) {
         try {
-            ResultSet.builder(c).parse("insert into clickcounter (x,y,moment) values ($x,$y,$time)")
+            FetchSet.builder(c).parse("insert into clickcounter (x,y,moment) values ($x,$y,$time)")
                     .input("x", x)
                     .input("y", y)
                     .input("time", new Date()).execute().close();

@@ -23,14 +23,11 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.weaverdb.Connection;
-import org.weaverdb.ResultSet;
+import org.weaverdb.DBReference;
+import org.weaverdb.FetchSet;
 import org.weaverdb.Statement;
-import org.weaverdb.WeaverInitializer;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -49,9 +46,9 @@ public class ExampleInstrumentedTest {
         DBHome.startDB(dbhome);
 
         System.err.println("initialized");
-        try (Connection conn = Connection.connectAnonymously("template1")) {
+        try (DBReference conn = DBReference.connect("template1")) {
             try (Statement s = conn.statement("select * from pg_type where oid = 16")) {
-                ResultSet.stream(s).flatMap(ResultSet.Row::stream).forEach(System.out::println);
+                FetchSet.stream(s).flatMap(FetchSet.Row::stream).forEach(System.out::println);
             }
         }
     }
