@@ -12,14 +12,17 @@
 
 package org.weaverdb.android;
 
+import android.util.Log;
+
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.FileUtils;
+import org.weaverdb.DBReference;
+import org.weaverdb.ExecutionException;
 import org.weaverdb.WeaverInitializer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -28,41 +31,128 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DBHome {
     private static final AtomicReference<Path> singleInstance = new AtomicReference<>();
 
-    public static void eraseDB(Path home) throws Exception {
+    /**
+     * Delete the files of the entire database install.  This cannot be reversed.
+     * @param home Absolute path to where the database will be removed
+     * @throws Exception
+     */
+    public static void eraseInstance(Path home) throws Exception {
         Path dbhome = home.resolve("dbhome");
-        if (!Files.exists(dbhome)) FileUtils.deleteDirectory(dbhome.toFile());
+        if (singleInstance.get() != null) {
+            throw new ExecutionException("db still running, close it first");
+        }
+        if (!Files.exists(dbhome)) {
+            FileUtils.deleteDirectory(dbhome.toFile());
+        }
     }
 
-    public static boolean startDB(Path home) throws IOException {
+    /**
+     * connect to a database namespace in the installation.  If the database does not
+     * exist, it will be created
+     * @param db name of the database
+     * @return reference to the database
+     */
+    public static DBReference connect(String db) {
+        checkIfStarted();
+        if (!dbExists(db)) {
+            if (!createDB(db)) {
+                throw new RuntimeException("unable to create database " + db);
+            }
+        }
+        return DBReference.connect(db);
+    }
+
+    /**
+     * Check if the desired database exists
+     * @param name name of the target database
+     * @return true if the database exists
+     */
+    public static boolean dbExists(String name) {
+        Path db = singleInstance.get();
+        if (db != null) {
+            return Files.exists(db.resolve(name));
+        }
+        return false;
+    }
+
+    /**
+     * Create a database in the current database installation
+     * @param name create a database to be accessed on connect
+     * @return true if the database was created
+     */
+    public static boolean createDB(String name) {
+        checkIfStarted();
+        if (!dbExists(name)) {
+            try (DBReference c = org.weaverdb.DBReference.connect("template1")) {
+                c.execute("create database " + name);
+                return true;
+            } catch (ExecutionException ee) {
+                Log.e("DBHOME", "unable to create database", ee);
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * drop a database from the installation
+     * @param name name of the database to drop
+     * @return true if the database was successfully dropped
+     */
+    public static boolean dropDB(String name) {
+        checkIfStarted();
+        if (dbExists(name)) {
+            try (DBReference c = org.weaverdb.DBReference.connect("template1")) {
+                c.execute("drop database " + name);
+                return true;
+            } catch (ExecutionException ee) {
+                Log.e("DBHOME", "unable to drop database", ee);
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Start the single database instance at the supplied installation
+     * path.  If the install does not exist at the supplied path, the
+     * the root database will attempt to be exploded in place before starting
+     * @param home absolute path location of the database
+     * @return true if the instance was successfully started
+     * @throws IOException
+     */
+    public static boolean startInstance(Path home) throws IOException {
         boolean created = false;
-        if (singleInstance.compareAndSet(null, home)) {
-            if (!Files.exists(home.resolve("dbhome"))) {
+        Path dbhome = home.resolve("dbhome");
+        if (singleInstance.compareAndSet(null, dbhome)) {
+            if (!Files.exists(dbhome)) {
                 unpackDBHome(home);
                 created = true;
             }
             Properties prop = new Properties();
             prop.setProperty("datadir", String.valueOf(home.resolve("dbhome")));
-            prop.setProperty("allow_anonymous", "true");
-            prop.setProperty("debuglevel", "DEBUG");
-            prop.setProperty("stdlog", "TRUE");
-            prop.setProperty("disable_crc", "TRUE");
             prop.setProperty("buffercount", "128");
 
             WeaverInitializer.initialize(prop);
-        } else if (!home.equals(singleInstance.get())) {
+            Runtime.getRuntime().addShutdownHook(new Thread(DBHome::close));
+        } else if (!dbhome.equals(singleInstance.get())) {
             throw new IOException("instance already exists at " + singleInstance.get());
         }
         return created;
     }
 
+    /**
+     * Attempt to shutdown and close the single instance of Weaver currently running
+     */
     public static void close() {
         Path home = singleInstance.get();
         if (home != null && singleInstance.compareAndSet(home, null)) {
             WeaverInitializer.close(false);
+            singleInstance.set(null);
         }
     }
 
-    public static void unpackDBHome(Path home) throws IOException {
+    private static void unpackDBHome(Path home) throws IOException {
         try (InputStream is = DBHome.class.getResourceAsStream("/dbhome.tar")) {
             TarArchiveInputStream tar = new TarArchiveInputStream(is);
             ArchiveEntry entry;
@@ -74,6 +164,12 @@ public class DBHome {
                     Files.copy(tar, extractTo);
                 }
             }
+        }
+    }
+
+    private static void checkIfStarted() {
+        if (singleInstance.get() == null) {
+            throw new RuntimeException("weaver intance not started");
         }
     }
 }

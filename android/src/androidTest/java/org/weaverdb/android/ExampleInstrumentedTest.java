@@ -43,7 +43,7 @@ public class ExampleInstrumentedTest {
         assertEquals("org.weaverdb.android.test", appContext.getPackageName());
 
         Path dbhome = appContext.getFilesDir().toPath();
-        DBHome.startDB(dbhome);
+        DBHome.startInstance(dbhome);
 
         System.err.println("initialized");
         try (DBReference conn = DBReference.connect("template1")) {

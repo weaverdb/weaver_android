@@ -1,3 +1,4 @@
+
 plugins {
     alias(libs.plugins.android.library)
     id("maven-publish")
@@ -53,13 +54,13 @@ android {
 
         }
     }
-
 }
 
 dependencies {
     api(fileTree(mapOf(
         "dir" to "../weaverdb/pgjava_c/build/libs/",
-        "include" to listOf("*.aar", "*.jar"),
+        "include" to listOf("*.jar"),
+        "exclude" to listOf("*-sources.jar","*-javadoc.jar"),
     )))
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -69,12 +70,49 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 }
 
+val srcs = tasks.create<Jar>("sourcesJar") {
+    archiveClassifier.set("sources")
+    from(android.sourceSets["main"].java.srcDirs)
+    from(fileTree(mapOf(
+        "dir" to "../weaverdb/pgjava_c/src/main/java/",
+    )))
+}
+val docset = sourceSets.create("combinedJavadoc") {
+    java {
+        srcDirs("src/main/java", "../weaverdb/pgjava_c/src/main/java")
+        filter.exclude(
+            "org/weaverdb/WeaverCmdLine.java",
+            "org/weaverdb/sample/**",
+            "org/weaverdb/WeaverReferenceFactory17.java",
+            "org/weaverdb/DBReferenceFactory.java",
+            "org/weaverdb/StreamingTransformer.java",
+            "org/weaverdb/StreamingTransformer17.java",
+        )
+    }
+}
+
+val docs = tasks.register<Javadoc>("docs") {
+    dependsOn(tasks.get("build"))
+    source = docset.java
+    classpath += files(configurations["releaseRuntimeClasspath"])
+    classpath += files(configurations["androidApis"])
+}
+
+val docsJar = tasks.create<Jar>("docsJar") {
+    archiveClassifier.set("javadoc")
+    from(fileTree(mapOf(
+        "dir" to layout.buildDirectory.dir("docs/javadoc/"),
+    )))
+}
+
 publishing {
     publications {
         register<MavenPublication>("release") {
-            groupId = "org.wearverdb.android"
+            groupId = "org.weaverdb.android"
             artifactId = "dbhome"
             version = "1.0"
+            artifact(srcs)
+            artifact(docsJar)
 
             afterEvaluate {
                 from(components["release"])
@@ -84,7 +122,7 @@ publishing {
     repositories {
         maven {
             name = "myrepo"
-            url = uri("${project.buildDir}/repo")
+            url = uri(layout.buildDirectory.dir("repo"))
         }
     }
 }
