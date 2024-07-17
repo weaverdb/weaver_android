@@ -117,6 +117,31 @@ publishing {
             afterEvaluate {
                 from(components["release"])
             }
+            pom {
+                name = "Android WeaverDB"
+                description = "AAR library encompassing WeaverDB"
+                url = "https://github.com/weaverdb/weaver_android"
+                properties = mapOf(
+                )
+                licenses {
+                    license {
+                        name = "BSD 3 Clause License"
+                        url = "https://github.com/weaverdb/weaver_android/blob/main/LICENSE"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "mkscott"
+                        name = "Myron Scott"
+                        email = "myron@weaverdb.org"
+                    }
+                }
+                scm {
+                    connection = "scm:git:git://git@github.com:weaverdb/weaver_android.git"
+                    developerConnection = "scm:ssh://git@github.com:weaverdb/weaver_android.git"
+                    url = "https://github.com/weaverdb/weaver_android.git"
+                }
+            }
         }
     }
     repositories {
