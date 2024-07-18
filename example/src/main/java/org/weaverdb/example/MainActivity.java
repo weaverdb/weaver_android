@@ -51,18 +51,19 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             DBHome.startInstance(getApplicationContext().getFilesDir().toPath());
-            boolean dbcreated = DBHome.createDB("uitest");
             c = DBReference.connect("uitest");
-            if (dbcreated) {
+            if (c == null) {
+                DBHome.createDB("uitest");
+                c = DBReference.connect("uitest");
                 c.execute("create table clickcounter (x int4, y int4, moment timestamp)");
-            } else {
-                try (Stream<FetchSet.Row> r = FetchSet.builder(c).parse("select x,y,moment from clickcounter order by moment")
-                        .output(1, Integer.class)
-                        .output(2, Integer.class)
-                        .output(3, Date.class)
-                        .execute()) {
-                    clicks = r.peek(row->Log.d("INIT", row.toString())).count();
-                }
+            }
+
+            try (Stream<FetchSet.Row> r = FetchSet.builder(c).parse("select x,y,moment from clickcounter order by moment")
+                    .output(1, Integer.class)
+                    .output(2, Integer.class)
+                    .output(3, Date.class)
+                    .execute()) {
+                clicks = r.peek(row->Log.d("INIT", row.toString())).count();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

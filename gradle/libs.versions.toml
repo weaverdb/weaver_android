@@ -1,5 +1,6 @@
 [versions]
 agp = "8.5.0"
+dbhomeVersion = "1.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
@@ -11,6 +12,7 @@ activity = "1.9.0"
 constraintlayout = "2.1.4"
 
 [libraries]
+android-dbhome = { module = "org.weaverdb.android:dbhome", version.ref = "dbhomeVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

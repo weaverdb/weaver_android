@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.android.library)
     id("maven-publish")
+    id("signing")
 }
 
 android {
@@ -110,7 +111,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "org.weaverdb.android"
             artifactId = "dbhome"
-            version = "1.0"
+            version = "1.0.1"
             artifact(srcs)
             artifact(docsJar)
 
@@ -119,7 +120,7 @@ publishing {
             }
             pom {
                 name = "Android WeaverDB"
-                description = "AAR library encompassing WeaverDB"
+                description = "AAR library of WeaverDB for Android"
                 url = "https://github.com/weaverdb/weaver_android"
                 properties = mapOf(
                 )
@@ -150,4 +151,8 @@ publishing {
             url = uri(layout.buildDirectory.dir("repo"))
         }
     }
+}
+
+signing {
+    sign(publishing.publications["release"])
 }

@@ -41,7 +41,7 @@ public class DBHome {
         if (singleInstance.get() != null) {
             throw new ExecutionException("db still running, close it first");
         }
-        if (!Files.exists(dbhome)) {
+        if (Files.exists(dbhome)) {
             FileUtils.deleteDirectory(dbhome.toFile());
         }
     }
@@ -70,7 +70,7 @@ public class DBHome {
     public static boolean dbExists(String name) {
         Path db = singleInstance.get();
         if (db != null) {
-            return Files.exists(db.resolve(name));
+            return Files.exists(db.resolve("base").resolve(name));
         }
         return false;
     }
@@ -123,6 +123,9 @@ public class DBHome {
      */
     public static boolean startInstance(Path home) throws IOException {
         boolean created = false;
+        if (!home.isAbsolute()) {
+            throw new RuntimeException("the path to the database instance must be an absolute path");
+        }
         Path dbhome = home.resolve("dbhome");
         if (singleInstance.compareAndSet(null, dbhome)) {
             if (!Files.exists(dbhome)) {
@@ -134,7 +137,7 @@ public class DBHome {
             prop.setProperty("buffercount", "128");
 
             WeaverInitializer.initialize(prop);
-            Runtime.getRuntime().addShutdownHook(new Thread(DBHome::close));
+//            Runtime.getRuntime().addShutdownHook(new Thread(DBHome::close));
         } else if (!dbhome.equals(singleInstance.get())) {
             throw new IOException("instance already exists at " + singleInstance.get());
         }
