@@ -137,7 +137,7 @@ public class DBHome {
             prop.setProperty("buffercount", "128");
 
             WeaverInitializer.initialize(prop);
-//            Runtime.getRuntime().addShutdownHook(new Thread(DBHome::close));
+            Runtime.getRuntime().addShutdownHook(new Thread(DBHome::close));
         } else if (!dbhome.equals(singleInstance.get())) {
             throw new IOException("instance already exists at " + singleInstance.get());
         }
@@ -150,7 +150,7 @@ public class DBHome {
     public static void close() {
         Path home = singleInstance.get();
         if (home != null && singleInstance.compareAndSet(home, null)) {
-            WeaverInitializer.close(false);
+            WeaverInitializer.forceShutdown();
             singleInstance.set(null);
         }
     }
