@@ -58,7 +58,8 @@ android {
 }
 
 dependencies {
-    api(fileTree(mapOf(
+    testImplementation(libs.weaverdb)  // force build of submodule
+    api(fileTree(mapOf(    // pick up jar artifact from forced build
         "dir" to "../weaverdb/pgjava_c/build/libs/",
         "include" to listOf("*.jar"),
         "exclude" to listOf("*-sources.jar","*-javadoc.jar"),
@@ -111,7 +112,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "org.weaverdb.android"
             artifactId = "dbhome"
-            version = "1.0.1"
+            version = "1.0.2"
             artifact(srcs)
             artifact(docsJar)
 
@@ -144,6 +145,7 @@ publishing {
                 }
             }
         }
+
     }
     repositories {
         maven {
