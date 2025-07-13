@@ -119,9 +119,7 @@ publishing {
         register<MavenPublication>("debug") {
             groupId = "org.weaverdb.android"
             artifactId = "dbhome"
-            version = "1.0.2-debug"
-            artifact(srcs)
-            artifact(docsJar)
+            version = "1.0.3-debug"
 
             afterEvaluate {
                 from(components["debug"])
@@ -155,7 +153,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "org.weaverdb.android"
             artifactId = "dbhome"
-            version = "1.0.2"
+            version = "1.0.3"
             artifact(srcs)
             artifact(docsJar)
 
@@ -199,4 +197,5 @@ publishing {
 
 signing {
     sign(publishing.publications["release"])
+    sign(publishing.publications["debug"])
 }
