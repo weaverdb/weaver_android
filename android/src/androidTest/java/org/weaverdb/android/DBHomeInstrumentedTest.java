@@ -27,11 +27,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.weaverdb.DBReference;
+import org.weaverdb.ExecutionException;
 import org.weaverdb.FetchSet;
 import org.weaverdb.Statement;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -63,6 +65,22 @@ public class DBHomeInstrumentedTest {
         assertTrue(DBHome.dbExists("seeit"));
         assertTrue(DBHome.dropDB("seeit"));
         assertFalse(DBHome.dbExists("seeit"));
+    }
+
+    @Test
+    public void testFreespace() throws Exception {
+        DBReference ref = DBHome.connect("uitest");
+        ref.execute("create table clickcounter (x int4, y int4, moment timestamp)");
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100; j++) {
+                FetchSet.builder(ref)
+                        .parse("insert into clickcounter (x,y,moment) values (:x,:y,:time)")
+                        .input("x", Double.valueOf(Math.random() * 100).intValue())
+                        .input("y", Double.valueOf(Math.random() * 100).intValue())
+                        .input("time", new Date()).execute().close();
+            }
+            FetchSet.builder(ref).parse("delete from clickcounter").execute().close();
+        }
     }
 
     @Test

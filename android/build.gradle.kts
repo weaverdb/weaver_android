@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "org.weaverdb.android"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 27
@@ -24,7 +24,7 @@ android {
         }
         ndk {
             abiFilters.add("arm64-v8a")
-            abiFilters.add( "x86_64")
+            abiFilters.add("x86_64")
         }
 
     }
@@ -37,11 +37,15 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            isJniDebuggable = true
+            isMinifyEnabled = false
+        }
     }
     externalNativeBuild {
         cmake {
             path("${project.rootDir}/weaverdb/CMakeLists.txt")
-            version = "3.29.6"
+            version = "4.0.2"
         }
     }
     compileOptions {
@@ -52,6 +56,9 @@ android {
     buildToolsVersion = "35.0.0"
     publishing {
         singleVariant("release") {
+
+        }
+        singleVariant("debug") {
 
         }
     }
@@ -72,7 +79,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 }
 
-val srcs = tasks.create<Jar>("sourcesJar") {
+val srcs = tasks.register<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
     from(android.sourceSets["main"].java.srcDirs)
     from(fileTree(mapOf(
@@ -94,13 +101,13 @@ val docset = sourceSets.create("combinedJavadoc") {
 }
 
 val docs = tasks.register<Javadoc>("docs") {
-    dependsOn(tasks.get("build"))
+    dependsOn(tasks["build"])
     source = docset.java
     classpath += files(configurations["releaseRuntimeClasspath"])
     classpath += files(configurations["androidApis"])
 }
 
-val docsJar = tasks.create<Jar>("docsJar") {
+val docsJar = tasks.register<Jar>("docsJar") {
     archiveClassifier.set("javadoc")
     from(fileTree(mapOf(
         "dir" to layout.buildDirectory.dir("docs/javadoc/"),
@@ -109,6 +116,42 @@ val docsJar = tasks.create<Jar>("docsJar") {
 
 publishing {
     publications {
+        register<MavenPublication>("debug") {
+            groupId = "org.weaverdb.android"
+            artifactId = "dbhome"
+            version = "1.0.2-debug"
+            artifact(srcs)
+            artifact(docsJar)
+
+            afterEvaluate {
+                from(components["debug"])
+            }
+            pom {
+                name = "Android WeaverDB"
+                description = "AAR library of WeaverDB for Android"
+                url = "https://github.com/weaverdb/weaver_android"
+                properties = mapOf(
+                )
+                licenses {
+                    license {
+                        name = "BSD 3 Clause License"
+                        url = "https://github.com/weaverdb/weaver_android/blob/main/LICENSE"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "mkscott"
+                        name = "Myron Scott"
+                        email = "myron@weaverdb.org"
+                    }
+                }
+                scm {
+                    connection = "scm:git:git://git@github.com:weaverdb/weaver_android.git"
+                    developerConnection = "scm:ssh://git@github.com:weaverdb/weaver_android.git"
+                    url = "https://github.com/weaverdb/weaver_android.git"
+                }
+            }
+        }
         register<MavenPublication>("release") {
             groupId = "org.weaverdb.android"
             artifactId = "dbhome"
@@ -145,7 +188,6 @@ publishing {
                 }
             }
         }
-
     }
     repositories {
         maven {

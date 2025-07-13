@@ -135,6 +135,7 @@ public class DBHome {
             Properties prop = new Properties();
             prop.setProperty("datadir", String.valueOf(home.resolve("dbhome")));
             prop.setProperty("buffercount", "128");
+            prop.setProperty("logfile", String.valueOf(home.resolve("weaverlog.log")));
 
             WeaverInitializer.initialize(prop);
             Runtime.getRuntime().addShutdownHook(new Thread(DBHome::close));
