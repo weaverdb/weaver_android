@@ -2,3 +2,4 @@
 /.idea/
 **/.cxx/
 local.properties
+**/build

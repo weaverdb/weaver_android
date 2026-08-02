@@ -5,14 +5,14 @@ plugins {
     id("signing")
 }
 
-android {
+configure<com.android.build.api.dsl.LibraryExtension> {
     namespace = "org.weaverdb.android"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
-        minSdk = 27
+        minSdk = 34
         aarMetadata {
-            minCompileSdk = 27
+            minCompileSdk = 34
         }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -20,13 +20,10 @@ android {
             cmake {
                 cppFlags("")
             }
-
         }
         ndk {
-            abiFilters.add("arm64-v8a")
-            abiFilters.add("x86_64")
+            abiFilters += listOf("arm64-v8a", "x86_64")
         }
-
     }
 
     buildTypes {
@@ -37,30 +34,32 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {
+        getByName("debug") {
             isJniDebuggable = true
             isMinifyEnabled = false
         }
     }
     externalNativeBuild {
         cmake {
-            path("${project.rootDir}/weaverdb/CMakeLists.txt")
-            version = "4.0.2"
+            path = file("${project.rootDir}/weaverdb/CMakeLists.txt")
+            version = "4.1.2"
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    ndkVersion = "27.0.11902837 rc2"
-    buildToolsVersion = "35.0.0"
+    ndkVersion = "28.2.13676358"
+    buildToolsVersion = "37.0.0"
+    lint {
+        targetSdk = 37
+    }
+    testOptions {
+        targetSdk = 37
+    }
     publishing {
-        singleVariant("release") {
-
-        }
-        singleVariant("debug") {
-
-        }
+        singleVariant("release")
+        singleVariant("debug")
     }
 }
 
@@ -69,7 +68,7 @@ dependencies {
     api(fileTree(mapOf(    // pick up jar artifact from forced build
         "dir" to "../weaverdb/pgjava_c/build/libs/",
         "include" to listOf("*.jar"),
-        "exclude" to listOf("*-sources.jar","*-javadoc.jar"),
+        "exclude" to listOf("*-sources.jar", "*-javadoc.jar"),
     )))
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -79,39 +78,37 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 }
 
-val srcs = tasks.register<Jar>("sourcesJar") {
+val sourcesJar by tasks.registering(Jar::class) {
+    description = "Creates a jar containing the source code."
     archiveClassifier.set("sources")
-    from(android.sourceSets["main"].java.srcDirs)
+    from("src/main/java")
     from(fileTree(mapOf(
         "dir" to "../weaverdb/pgjava_c/src/main/java/",
     )))
 }
-val docset = sourceSets.create("combinedJavadoc") {
-    java {
-        srcDirs("src/main/java", "../weaverdb/pgjava_c/src/main/java")
-        filter.exclude(
-            "org/weaverdb/WeaverCmdLine.java",
-            "org/weaverdb/sample/**",
-            "org/weaverdb/WeaverReferenceFactory17.java",
-            "org/weaverdb/DBReferenceFactory.java",
-            "org/weaverdb/StreamingTransformer.java",
-            "org/weaverdb/StreamingTransformer17.java",
-        )
-    }
+
+val docs by tasks.registering(Javadoc::class) {
+    description = "Generates Javadoc for the project."
+    dependsOn(tasks.named("build"))
+    source("src/main/java")
+    source("../weaverdb/pgjava_c/src/main/java")
+    exclude("org/weaverdb/WeaverCmdLine.java")
+    exclude("org/weaverdb/sample/**")
+    exclude("org/weaverdb/WeaverReferenceFactory17.java")
+    exclude("org/weaverdb/DBReferenceFactory.java")
+    exclude("org/weaverdb/StreamingTransformer.java")
+    exclude("org/weaverdb/StreamingTransformer17.java")
+
+    classpath = configurations["releaseRuntimeClasspath"]
+    val androidComponents = extensions.getByType<com.android.build.api.variant.LibraryAndroidComponentsExtension>()
+    classpath += files(androidComponents.sdkComponents.bootClasspath)
 }
 
-val docs = tasks.register<Javadoc>("docs") {
-    dependsOn(tasks["build"])
-    source = docset.java
-    classpath += files(configurations["releaseRuntimeClasspath"])
-    classpath += files(configurations["androidApis"])
-}
-
-val docsJar = tasks.register<Jar>("docsJar") {
+val docsJar by tasks.registering(Jar::class) {
+    description = "Creates a jar containing the Javadoc."
+    dependsOn(docs)
     archiveClassifier.set("javadoc")
-    from(fileTree(mapOf(
-        "dir" to layout.buildDirectory.dir("docs/javadoc/"),
-    )))
+    from(docs.map { it.destinationDir!! })
 }
 
 publishing {
@@ -128,8 +125,6 @@ publishing {
                 name = "Android WeaverDB"
                 description = "AAR library of WeaverDB for Android"
                 url = "https://github.com/weaverdb/weaver_android"
-                properties = mapOf(
-                )
                 licenses {
                     license {
                         name = "BSD 3 Clause License"
@@ -154,7 +149,7 @@ publishing {
             groupId = "org.weaverdb.android"
             artifactId = "dbhome"
             version = "1.0.3"
-            artifact(srcs)
+            artifact(sourcesJar)
             artifact(docsJar)
 
             afterEvaluate {
@@ -164,8 +159,6 @@ publishing {
                 name = "Android WeaverDB"
                 description = "AAR library of WeaverDB for Android"
                 url = "https://github.com/weaverdb/weaver_android"
-                properties = mapOf(
-                )
                 licenses {
                     license {
                         name = "BSD 3 Clause License"

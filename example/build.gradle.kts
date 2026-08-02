@@ -3,13 +3,17 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+        }
+    }
     namespace = "org.weaverdb.example"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "org.weaverdb.example"
-        minSdk = 27
-        targetSdk = 34
+        minSdk = 37
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
